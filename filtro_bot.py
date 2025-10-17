@@ -1,6 +1,6 @@
 import telebot
 from datetime import datetime
-import locale
+# Rimuoviamo l'import di 'locale' perché non lo useremo più
 import os 
 
 # ==============================================================================
@@ -10,7 +10,6 @@ import os
 # RECUPERA IL TOKEN in modo sicuro dalla variabile d'ambiente di Railway
 TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 
-# Verifica che il token sia stato trovato prima di procedere
 if not TOKEN:
     print("ERRORE: La variabile d'ambiente TELEGRAM_BOT_TOKEN non è stata trovata.")
     exit()
@@ -19,7 +18,7 @@ if not TOKEN:
 bot = telebot.TeleBot(TOKEN)
 
 # ==============================================================================
-# 2. FUNZIONE DI LOGICA: ESTRAZIONE E FILTRAGGIO
+# 2. FUNZIONE DI LOGICA: ESTRAZIONE E FILTRAGGIO (Invariata)
 # ==============================================================================
 
 def estrai_prenotazioni_del_giorno(testo_completo_prenotazioni: str, data_cercata: str) -> str:
@@ -29,6 +28,7 @@ def estrai_prenotazioni_del_giorno(testo_completo_prenotazioni: str, data_cercat
     testo_completo = testo_completo_prenotazioni.strip()
     
     # 1. Trova l'inizio del blocco
+    # CERCA LA DATA IN ITALIANO GENERATA DAL FALLBACK
     inizio_blocco = testo_completo.find(data_cercata + '\n')
     
     if inizio_blocco == -1:
@@ -87,39 +87,21 @@ def handle_forwarded_message(message):
     # 1. Determina la data odierna nel formato richiesto (es. "17 OTTOBRE")
     data_oggi = datetime.now()
     
-    # --- BLOCCO DI CORREZIONE DELLA LOCALIZZAZIONE ITALIANA ---
+    # === SOLUZIONE DEFINITIVA: MAPPATURA MANUALE DEI MESI ITALIANI ===
     
-    # 1. Tentativo di impostare la localizzazione italiana sul server
-    try:
-        # Tenta diverse configurazioni comuni per l'italiano su Linux
-        locale.setlocale(locale.LC_TIME, 'it_IT.UTF-8')
-    except locale.Error:
-        try:
-            locale.setlocale(locale.LC_TIME, 'ita')
-        except locale.Error:
-            try:
-                locale.setlocale(locale.LC_TIME, 'it_IT')
-            except:
-                # Se fallisce, usiamo il fallback manuale, il print verrà ignorato da Railway ma utile in locale
-                pass 
-                
-    # 2. Formatta la data (usando strftime se la localizzazione è riuscita, altrimenti fallisce)
-    try:
-        nome_del_mese = data_oggi.strftime('%B').upper()
-        giorno_formattato = str(data_oggi.day) + ' ' + nome_del_mese
-    except:
-        # Fallback manuale dei mesi nel caso la localizzazione fallisca completamente
-        mesi_italiani = [
-            "GENNAIO", "FEBBRAIO", "MARZO", "APRILE", "MAGGIO", "GIUGNO", 
-            "LUGLIO", "AGOSTO", "SETTEMBRE", "OTTOBRE", "NOVEMBRE", "DICEMBRE"
-        ]
-        # data_oggi.month restituisce 1 (Gennaio) a 12 (Dicembre)
-        nome_del_mese = mesi_italiani[data_oggi.month - 1] 
-        giorno_formattato = str(data_oggi.day) + ' ' + nome_del_mese
+    # Lista dei mesi in italiano in maiuscolo (indice 0 = Gennaio)
+    mesi_italiani = [
+        "GENNAIO", "FEBBRAIO", "MARZO", "APRILE", "MAGGIO", "GIUGNO", 
+        "LUGLIO", "AGOSTO", "SETTEMBRE", "OTTOBRE", "NOVEMBRE", "DICEMBRE"
+    ]
     
-    # Il risultato sarà correttamente "17 OTTOBRE"
+    # data_oggi.month restituisce 1 (Gennaio) a 12 (Dicembre)
+    nome_del_mese = mesi_italiani[data_oggi.month - 1] 
     
-    # --- FINE BLOCCO DI CORREZIONE ---
+    # Crea la stringa di ricerca: es. "17 OTTOBRE"
+    giorno_formattato = str(data_oggi.day) + ' ' + nome_del_mese
+    
+    # --- FINE SOLUZIONE DEFINITIVA ---
 
     # 2. Ottieni il testo da filtrare
     if message.text:
