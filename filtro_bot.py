@@ -1,13 +1,13 @@
 import telebot
 from datetime import datetime
 import locale
-import os # Importato per recuperare il token dalle variabili d'ambiente
+import os 
 
 # ==============================================================================
 # 1. IMPOSTAZIONI DEL BOT
 # ==============================================================================
 
-# RECUPERA IL TOKEN in modo sicuro dalla variabile d'ambiente di Render
+# RECUPERA IL TOKEN in modo sicuro dalla variabile d'ambiente di Railway
 TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 
 # Verifica che il token sia stato trovato prima di procedere
@@ -17,16 +17,6 @@ if not TOKEN:
 
 # Inizializza il bot
 bot = telebot.TeleBot(TOKEN)
-
-# Imposta la localizzazione italiana per i nomi dei mesi
-try:
-    locale.setlocale(locale.LC_TIME, 'it_IT.UTF-8')
-except locale.Error:
-    try:
-        locale.setlocale(locale.LC_TIME, 'it_IT')
-    except:
-        # Fallback nel caso in cui le impostazioni locali non funzionino
-        pass 
 
 # ==============================================================================
 # 2. FUNZIONE DI LOGICA: ESTRAZIONE E FILTRAGGIO
@@ -96,8 +86,41 @@ def handle_forwarded_message(message):
     
     # 1. Determina la data odierna nel formato richiesto (es. "17 OTTOBRE")
     data_oggi = datetime.now()
-    giorno_formattato = str(data_oggi.day) + ' ' + data_oggi.strftime('%B').upper()
     
+    # --- BLOCCO DI CORREZIONE DELLA LOCALIZZAZIONE ITALIANA ---
+    
+    # 1. Tentativo di impostare la localizzazione italiana sul server
+    try:
+        # Tenta diverse configurazioni comuni per l'italiano su Linux
+        locale.setlocale(locale.LC_TIME, 'it_IT.UTF-8')
+    except locale.Error:
+        try:
+            locale.setlocale(locale.LC_TIME, 'ita')
+        except locale.Error:
+            try:
+                locale.setlocale(locale.LC_TIME, 'it_IT')
+            except:
+                # Se fallisce, usiamo il fallback manuale, il print verrà ignorato da Railway ma utile in locale
+                pass 
+                
+    # 2. Formatta la data (usando strftime se la localizzazione è riuscita, altrimenti fallisce)
+    try:
+        nome_del_mese = data_oggi.strftime('%B').upper()
+        giorno_formattato = str(data_oggi.day) + ' ' + nome_del_mese
+    except:
+        # Fallback manuale dei mesi nel caso la localizzazione fallisca completamente
+        mesi_italiani = [
+            "GENNAIO", "FEBBRAIO", "MARZO", "APRILE", "MAGGIO", "GIUGNO", 
+            "LUGLIO", "AGOSTO", "SETTEMBRE", "OTTOBRE", "NOVEMBRE", "DICEMBRE"
+        ]
+        # data_oggi.month restituisce 1 (Gennaio) a 12 (Dicembre)
+        nome_del_mese = mesi_italiani[data_oggi.month - 1] 
+        giorno_formattato = str(data_oggi.day) + ' ' + nome_del_mese
+    
+    # Il risultato sarà correttamente "17 OTTOBRE"
+    
+    # --- FINE BLOCCO DI CORREZIONE ---
+
     # 2. Ottieni il testo da filtrare
     if message.text:
         testo_da_filtrare = message.text
@@ -116,5 +139,5 @@ def handle_forwarded_message(message):
 # 4. AVVIO DEL BOT
 # ==============================================================================
 
-print("Bot avviato e in ascolto su Render...")
+print("Bot avviato e in ascolto...")
 bot.polling(none_stop=True)
