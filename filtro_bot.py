@@ -118,8 +118,32 @@ def handle_forwarded_message(message):
 
 
 # ==============================================================================
-# 4. AVVIO DEL BOT
+# 4. AVVIO DEL BOT (IMPLEMENTAZIONE ROBUSTA)
 # ==============================================================================
 
+import time # Aggiungi questa riga all'inizio del tuo file con gli altri 'import'
+
 print("Bot avviato e in ascolto...")
-bot.polling(none_stop=True)
+
+while True:
+    try:
+        # Avvia il polling con none_stop=True (come prima)
+        bot.polling(none_stop=True, interval=0, timeout=20) 
+        
+    except requests.exceptions.ReadTimeout:
+        # Gestisce i timeout "puliti" se il server non risponde, riprova immediatamente
+        print("Timeout di lettura, riavvio polling...")
+        time.sleep(1) 
+        continue
+    
+    except (requests.exceptions.ConnectionError, urllib3.exceptions.ProtocolError) as e:
+        # Gestisce la disconnessione forzata (ConnectionResetError) e altri errori di connessione
+        print(f"Errore di Connessione/Protocollo: {e}. Riprovo tra 5 secondi...")
+        time.sleep(5)
+        continue
+        
+    except Exception as e:
+        # Gestisce eventuali altri errori imprevisti
+        print(f"Errore generico: {e}. Riprovo tra 10 secondi...")
+        time.sleep(10)
+        continue
