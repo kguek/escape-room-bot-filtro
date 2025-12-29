@@ -1,4 +1,9 @@
-
+import telebot
+from datetime import datetime
+import os
+import time
+import requests  # <--- AGGIUNGI QUESTO
+import urllib3   # <--- AGGIUNGI QUESTO
 import telebot
 from datetime import datetime
 # Rimuoviamo l'import di 'locale' perché non lo useremo più
