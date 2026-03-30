@@ -2,25 +2,24 @@ import telebot
 from datetime import datetime
 import os
 import time
-import requests  # <--- AGGIUNGI QUESTO
-import urllib3   # <--- AGGIUNGI QUESTO
+import requests 
+import urllib3   
 import telebot
+import time 
 from datetime import datetime
-# Rimuoviamo l'import di 'locale' perché non lo useremo più
+
 import os 
 
 # ==============================================================================
 # 1. IMPOSTAZIONI DEL BOT
 # ==============================================================================
 
-# RECUPERA IL TOKEN in modo sicuro dalla variabile d'ambiente di Railway
 TOKEN = os.environ.get('TELEGRAM_BOT_TOKEN')
 
 if not TOKEN:
     print("ERRORE: La variabile d'ambiente TELEGRAM_BOT_TOKEN non è stata trovata.")
     exit()
 
-# Inizializza il bot
 bot = telebot.TeleBot(TOKEN)
 
 # ==============================================================================
@@ -32,24 +31,18 @@ def estrai_prenotazioni_del_giorno(testo_completo_prenotazioni: str, data_cercat
     Filtra e restituisce le prenotazioni relative alla data cercata dal testo completo.
     """
     testo_completo = testo_completo_prenotazioni.strip()
-    
-    # 1. Trova l'inizio del blocco
-    # CERCA LA DATA IN ITALIANO GENERATA DAL FALLBACK
+
     inizio_blocco = testo_completo.find(data_cercata + '\n')
     
     if inizio_blocco == -1:
         return f"Nessuna prenotazione trovata per il {data_cercata}."
 
-    # Calcola l'indice di inizio del contenuto (dopo la riga della data)
     inizio_contenuto = inizio_blocco + len(data_cercata) + 1 
     testo_dopo_oggi = testo_completo[inizio_contenuto:]
     
-    # 2. Trova la fine del blocco (l'inizio del giorno successivo)
     righe = testo_dopo_oggi.split('\n')
     fine_relativa = -1
     
-    # Cerca la prima riga successiva che assomiglia a una nuova intestazione di data:
-    # [Numero Spazio MESE_IN_MAIUSCOLO]
     for i, riga in enumerate(righe):
         parti = riga.strip().split()
         if len(parti) > 1 and parti[0].isdigit() and parti[1].isupper():
@@ -67,7 +60,6 @@ def estrai_prenotazioni_del_giorno(testo_completo_prenotazioni: str, data_cercat
     if not blocco_oggi:
         return f"Nessuna prenotazione trovata per il {data_cercata}."
     
-    # 3. Ricostruisce il messaggio con l'intestazione
     risultato = data_cercata + '\n' + blocco_oggi
     return risultato.strip()
 
@@ -90,12 +82,8 @@ def send_welcome(message):
 def handle_forwarded_message(message):
     """Gestisce tutti i messaggi INOLTRATI contenenti le prenotazioni."""
     
-    # 1. Determina la data odierna nel formato richiesto (es. "17 OTTOBRE")
     data_oggi = datetime.now()
     
-    # === SOLUZIONE DEFINITIVA: MAPPATURA MANUALE DEI MESI ITALIANI ===
-    
-    # Lista dei mesi in italiano in maiuscolo (indice 0 = Gennaio)
     mesi_italiani = [
         "GENNAIO", "FEBBRAIO", "MARZO", "APRILE", "MAGGIO", "GIUGNO", 
         "LUGLIO", "AGOSTO", "SETTEMBRE", "OTTOBRE", "NOVEMBRE", "DICEMBRE"
@@ -126,8 +114,6 @@ def handle_forwarded_message(message):
 # ==============================================================================
 # 4. AVVIO DEL BOT (IMPLEMENTAZIONE ROBUSTA)
 # ==============================================================================
-
-import time # Aggiungi questa riga all'inizio del tuo file con gli altri 'import'
 
 print("Bot avviato e in ascolto...")
 
